@@ -1,4 +1,5 @@
 from PySide2 import QtWidgets
+from PySide2 import QtGui
 from PySide2.QtCore import Qt
 from PySide2.QtWidgets import *
 # from PySide2.QtUiTools import QUiLoader
@@ -14,38 +15,41 @@ tableData = {'col1': ['1111', '2', '3', '4', '5', '6', '7', '8', '9', '10'],
              'col2': ['1', '2', '1', '3', '4'],
              'col3': ['1', '1', '2', '1', '0']}
 
+anotherTableData = {'data1': ['a', 'b', 'c', 'd'],
+                    'data2': ['q', 'w', 'e', 'r', 't']}
+
 
 class TableView(QTableWidget):
-    def __init__(self, parent, data):
+    def __init__(self, parent):
         QTableWidget.__init__(self, parent)
 
-        self.data = data
+        self.data = 0
+        self.rowCount = 0
+        self.columnCount = 0
 
-        self.rowCount = 10
+    def setNewData(self, newData):
+        self.data = newData
+        allRowCounts = []
+        for key, value in self.data.items():
+            allRowCounts.append(len(value))
+        self.rowCount = max(allRowCounts)
         self.columnCount = len(self.data)
+
+    def setDataToTableView(self):
         self.setRowCount(self.rowCount)
         self.setColumnCount(self.columnCount)
 
-        self.setData()
-
-        self.resizeColumnsToContents()
-        self.resizeRowsToContents()
-
-
-    def setData(self):
         colHeaders = []
         for n, key in enumerate(sorted(self.data.keys())):
             colHeaders.append(key)
             rowData = self.data[key]
-
-            self.rowCount = n + 1
-            self.columnCount = len(rowData) if len(rowData) > self.columnCount else self.columnCount
-
             for m, item in enumerate(rowData):
                 newItem = QTableWidgetItem(item)
                 self.setItem(m, n, newItem)
 
         self.setHorizontalHeaderLabels(colHeaders)
+        self.resizeColumnsToContents()
+        self.resizeRowsToContents()
 
 
 class MainWindow(QMainWindow):
@@ -70,15 +74,19 @@ class MainWindow(QMainWindow):
 
         # button
         self.button = QtWidgets.QPushButton(self)
-        self.button.setText('Click')
+        self.button.setText('Click to change table data')
         self.button.clicked.connect(self.buttonClicked)
         self.button.move(50, 200)
+        self.button.setFixedWidth(200)
 
         # table
-        self.tableView = TableView(self, tableData)
+        self.tableView = TableView(self)
         self.tableView.move(50, 300)
-        self.tableView.setFixedWidth(300)
-        self.tableView.setFixedHeight(300)
+        self.tableView.setFixedWidth(900)
+        self.tableView.setFixedHeight(400)
+        self.tableView.setEditTriggers(QtWidgets.QAbstractItemView.NoEditTriggers)
+        self.tableView.setNewData(tableData)
+        self.tableView.setDataToTableView()
 
     def keyPressEvent(self, event):
         pressedKey = event.key()
@@ -97,6 +105,9 @@ class MainWindow(QMainWindow):
         self.label.setText(self.lineEdit.text())
 
     def buttonClicked(self):
+        self.tableView.setNewData(anotherTableData)
+        self.tableView.setDataToTableView()
+
         alert = QMessageBox()
         alert.setText('Clicked')
         alert.exec()
