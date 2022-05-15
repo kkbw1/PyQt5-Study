@@ -1,9 +1,12 @@
+import sys
+import json
+
 from PySide2 import QtWidgets
 from PySide2 import QtGui
 from PySide2.QtCore import Qt
 from PySide2.QtWidgets import *
 # from PySide2.QtUiTools import QUiLoader
-import sys
+
 
 WINDOW_POS_X = 400
 WINDOW_POS_Y = 100
@@ -88,6 +91,14 @@ class MainWindow(QMainWindow):
         self.tableView.setNewData(tableData)
         self.tableView.setDataToTableView()
 
+        # open file dialog button
+        self.button = QtWidgets.QPushButton(self)
+        self.button.setText('Open File Dialog')
+        self.button.clicked.connect(self.openFileDialog)
+        self.button.move(50, 250)
+        self.button.setFixedWidth(200)
+
+
     def keyPressEvent(self, event):
         pressedKey = event.key()
         qtKey = Qt.Key(pressedKey)
@@ -112,11 +123,34 @@ class MainWindow(QMainWindow):
         alert.setText('Clicked')
         alert.exec()
 
+    def openFileDialog(self):
+        print('openFileDialog')
+        fileDialog = QFileDialog()
+        fileDialog.setFileMode(QFileDialog.AnyFile)
+        fileDialog.setNameFilter('Json (*.json)')
+        if fileDialog.exec_():
+            print('exec')
+            selectedFiles = fileDialog.selectedFiles()
+            if len(selectedFiles) == 0:
+                return
+
+            jsonArray = []
+            jsonFilePath = selectedFiles[0]
+            jsonFileOut = open(jsonFilePath, 'r')
+            jsonFileData = json.load(jsonFileOut)
+            for jsonItem in jsonFileData:
+                jsonArray.append(jsonItem)
+
+        else:
+            print('not exec???')
+
+        def convertJsonArrayToTableDate(self, jsonArray):
+            print('convertJsonArrayToTableDate')
 
 if __name__ == "__main__":
     print('main')
 
-    app = QApplication([])
+    app = QApplication()
 
     wind = MainWindow()
     wind.show()
