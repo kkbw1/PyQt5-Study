@@ -1,10 +1,12 @@
 import sys
 import json
+from collections import OrderedDict
 
 from PySide2 import QtWidgets
 from PySide2 import QtGui
 from PySide2.QtCore import Qt
 from PySide2.QtWidgets import *
+
 # from PySide2.QtUiTools import QUiLoader
 
 
@@ -30,6 +32,32 @@ class TableView(QTableWidget):
         self.rowCount = 0
         self.columnCount = 0
 
+    def setNewDataFromEtradeJsonList(self, jsonList):
+        # dictHeaderList = ['id', 'epoch', 'date', 'type', 'amount', 'symbol', 'quantity', 'price']
+        dictHeaderList = ['date', 'type', 'amount', 'symbol', 'quantity', 'price']
+        etradeTransactions = OrderedDict()
+        for head in dictHeaderList:
+            etradeTransactions[head] = []
+
+        for jsonItem in jsonList:
+            for head in dictHeaderList:
+                if head in jsonItem is not None:
+                    if head == 'date':
+                        dateSubstr = jsonItem[head][:10]
+                        etradeTransactions[head].append(dateSubstr)
+                    elif head == 'amount' or head == 'quantity' or head == 'price':
+                        valueStr = str(jsonItem[head])
+                        etradeTransactions[head].append(valueStr)
+                    else:
+                        etradeTransactions[head].append(jsonItem[head])
+                else:
+                    etradeTransactions[head].append('')
+        # print()
+        # print(etradeTransactions)
+
+        self.setNewData(etradeTransactions)
+        self.setDataToTableView()
+
     def setNewData(self, newData):
         self.data = newData
         allRowCounts = []
@@ -38,12 +66,13 @@ class TableView(QTableWidget):
         self.rowCount = max(allRowCounts)
         self.columnCount = len(self.data)
 
-    def setDataToTableView(self):
+    def setDataToTableView(self, headerSort=False):
         self.setRowCount(self.rowCount)
         self.setColumnCount(self.columnCount)
 
         colHeaders = []
-        for n, key in enumerate(sorted(self.data.keys())):
+        dataKeys = sorted(self.data.keys()) if headerSort else self.data.keys()
+        for n, key in enumerate(dataKeys):
             colHeaders.append(key)
             rowData = self.data[key]
             for m, item in enumerate(rowData):
@@ -98,7 +127,6 @@ class MainWindow(QMainWindow):
         self.button.move(50, 250)
         self.button.setFixedWidth(200)
 
-
     def keyPressEvent(self, event):
         pressedKey = event.key()
         qtKey = Qt.Key(pressedKey)
@@ -134,18 +162,19 @@ class MainWindow(QMainWindow):
             if len(selectedFiles) == 0:
                 return
 
-            jsonArray = []
+            jsonList = []
             jsonFilePath = selectedFiles[0]
             jsonFileOut = open(jsonFilePath, 'r')
             jsonFileData = json.load(jsonFileOut)
             for jsonItem in jsonFileData:
-                jsonArray.append(jsonItem)
+                jsonList.append(jsonItem)
+                print(jsonItem)
 
+            self.tableView.setNewDataFromEtradeJsonList(jsonList)
+            
         else:
             print('not exec???')
 
-        def convertJsonArrayToTableDate(self, jsonArray):
-            print('convertJsonArrayToTableDate')
 
 if __name__ == "__main__":
     print('main')
