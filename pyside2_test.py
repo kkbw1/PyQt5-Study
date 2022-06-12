@@ -1,11 +1,15 @@
-import sys
 import json
+import os.path
+import sys
 from collections import OrderedDict
 
-from PySide2 import QtWidgets
 from PySide2 import QtGui
+from PySide2 import QtWidgets
 from PySide2.QtCore import Qt
+from PySide2.QtGui import QPixmap
 from PySide2.QtWidgets import *
+
+from PIL import Image
 
 # from PySide2.QtUiTools import QUiLoader
 
@@ -96,36 +100,43 @@ class MainWindow(QMainWindow):
         # label
         self.label = QtWidgets.QLabel(self)
         self.label.setText('Label')
-        self.label.move(50, 50)
+        self.label.move(50, 10)
 
         # lineEdit
         self.lineEdit = QLineEdit(self)
         self.lineEdit.returnPressed.connect(self.lineEditReturnPressed)
-        self.lineEdit.move(50, 100)
+        self.lineEdit.move(50, 30)
         self.lineEdit.setFixedWidth(200)
 
         # button
         self.button = QtWidgets.QPushButton(self)
         self.button.setText('Click to change table data')
         self.button.clicked.connect(self.buttonClicked)
-        self.button.move(50, 200)
+        self.button.move(50, 100)
         self.button.setFixedWidth(200)
-
-        # table
-        self.tableView = TableView(self)
-        self.tableView.move(50, 300)
-        self.tableView.setFixedWidth(900)
-        self.tableView.setFixedHeight(400)
-        self.tableView.setEditTriggers(QtWidgets.QAbstractItemView.NoEditTriggers)
-        self.tableView.setNewData(tableData)
-        self.tableView.setDataToTableView()
 
         # open file dialog button
         self.button = QtWidgets.QPushButton(self)
-        self.button.setText('Open File Dialog')
+        self.button.setText('Open JSON transactions')
         self.button.clicked.connect(self.openFileDialog)
-        self.button.move(50, 250)
+        self.button.move(50, 150)
         self.button.setFixedWidth(200)
+
+        # image choose file dialog button
+        self.imageButton = QtWidgets.QPushButton(self)
+        self.imageButton.setText('Open Image')
+        self.imageButton.clicked.connect(self.openImageFD)
+        self.imageButton.move(250, 150)
+        self.imageButton.setFixedWidth(200)
+
+        # table
+        self.tableView = TableView(self)
+        self.tableView.move(50, 200)
+        self.tableView.setFixedWidth(600)
+        self.tableView.setFixedHeight(500)
+        self.tableView.setEditTriggers(QtWidgets.QAbstractItemView.NoEditTriggers)
+        self.tableView.setNewData(tableData)
+        self.tableView.setDataToTableView()
 
     def keyPressEvent(self, event):
         pressedKey = event.key()
@@ -171,9 +182,73 @@ class MainWindow(QMainWindow):
                 print(jsonItem)
 
             self.tableView.setNewDataFromEtradeJsonList(jsonList)
-            
+
         else:
             print('not exec???')
+
+    def openImageFD(self):
+        print('openImageFileDialog')
+        imageFD = QFileDialog()
+        imageFD.setFileMode(QFileDialog.AnyFile)
+        imageFD.setNameFilter('Images (*.png *.jpg *.jpeg)')
+        if imageFD.exec_():
+            selectedFiles = imageFD.selectedFiles()
+            if len(selectedFiles) == 0:
+                return
+
+            print(selectedFiles)
+
+            picWidth, picHeight = Image.open(selectedFiles[0]).size
+            picRatioWH = picWidth / picHeight
+            print(picWidth)
+            print(picHeight)
+
+            dlgWidth = 1500
+            dlg = CustomPictureDialog()
+            dlg.setSize(dlgWidth, dlgWidth / picRatioWH)
+            dlg.setPicture(selectedFiles[0], picWidth, picHeight)
+            dlg.exec()
+
+
+class CustomPictureDialog(QDialog):
+    def __init__(self):
+        super(CustomPictureDialog, self).__init__()
+
+        self.dialogHeight = None
+        self.dialogWidth = None
+
+        self.pictureHeight = None
+        self.pictureWidth = None
+        self.pictureRatio = None
+
+        self.setWindowTitle('CustomPictureDialog')
+
+        # label
+        self.pixmapLabel = QtWidgets.QLabel(self)
+        self.pixmapLabel.move(0, 0)
+
+    def setSize(self, width, height):
+        self.setGeometry(WINDOW_POS_X + 10, WINDOW_POS_Y + 10, width, height)
+        self.dialogWidth = width
+        self.dialogHeight = height
+
+    def setPicture(self, path, width, height):
+        self.setWindowTitle(os.path.basename(path))
+
+        self.pictureWidth = width
+        self.pictureHeight = height
+        self.pictureRatio = width / height
+
+        self.pixmap = QPixmap(path)
+        self.pixmapLabel.setPixmap(self.pixmap)
+        self.pixmapLabel.setFixedWidth(self.dialogWidth)
+        self.pixmapLabel.setFixedHeight(self.dialogWidth / self.pictureRatio)
+        self.pixmapLabel.setScaledContents(True)
+
+    def resizeEvent(self, event):
+        dlgSize = event.size()
+        self.pixmapLabel.setFixedWidth(dlgSize.width())
+        self.pixmapLabel.setFixedHeight(dlgSize.width() / self.pictureRatio)
 
 
 if __name__ == "__main__":
